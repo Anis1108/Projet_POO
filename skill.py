@@ -23,7 +23,9 @@ class Skill:
         Effet : Réduit les points de santé de la cible par la valeur de "power".
         """
         if abs(user.x - target.x) <= self.range and abs(user.y - target.y) <= self.range:
-            target.health -= self.power  # Applique les dommages ou soins à la cible
+            damage = user.attack_power * self.power 
+            damage = damage/target.defense_power
+            target.health -= damage  # Applique les dommages ou soins à la cible
 
 
 class Pistolet(Skill):
