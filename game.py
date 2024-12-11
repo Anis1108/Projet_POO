@@ -32,7 +32,7 @@ class Game:
         self.screen = screen #Fenêtre principale où le jeu est dessiné.
 
         # Chaque unité est créée avec sa position initiale (x, y), sa santé, son équipe, une image, ses compétences, et sa distance de déplacement (move_range).
-       self.player_units = [
+        self.player_units = [
             Unit(0, 0, 100, 3,3, 'player', player_images[0], [Pistolet(), Grenade(), Sniper()]),
             Unit(1, 0, 100, 2,1, 'player', player_images[1], [Pistolet(), Grenade()]),
             Unit(2, 0, 100, 2,1, 'player', player_images[2], [Grenade()]),
