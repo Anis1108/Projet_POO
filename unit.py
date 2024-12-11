@@ -21,7 +21,7 @@ class Unit:
     - skills : Liste des compétences utilisables par l'unité.
     - move_range : Portée de déplacement de l'unité en cases.
     """
-    def __init__(self, x, y, health, team, image, skills=None, move_range=1):
+    def __init__(self, x, y, health, , attack_power, defense_power, team, image, skills=None, move_range=1):
         self.x = x  # Position X initiale dans la grille
         self.y = y  # Position Y initiale dans la grille
         self.health = health  # Points de vie de l'unité
