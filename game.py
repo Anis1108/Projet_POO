@@ -32,19 +32,19 @@ class Game:
         self.screen = screen #Fenêtre principale où le jeu est dessiné.
 
         # Chaque unité est créée avec sa position initiale (x, y), sa santé, son équipe, une image, ses compétences, et sa distance de déplacement (move_range).
-        self.player_units = [
-        Unit(0, 0, 100, 'player', player_images[0], [Soigner(),Sniper()], move_range=1),  
-        Unit(1, 0, 100, 'player', player_images[1], [Pistolet(), Grenade()], move_range=2),  
-        Unit(2, 0, 100, 'player', player_images[2], [Grenade()], move_range=2),  
-        Unit(3, 0, 100, 'player', player_images[3], [Sniper()], move_range=1),  
-    ]
+       self.player_units = [
+            Unit(0, 0, 100, 3,3, 'player', player_images[0], [Pistolet(), Grenade(), Sniper()]),
+            Unit(1, 0, 100, 2,1, 'player', player_images[1], [Pistolet(), Grenade()]),
+            Unit(2, 0, 100, 2,1, 'player', player_images[2], [Grenade()]),
+            Unit(3, 0, 100, 2,1, 'player', player_images[3], [Sniper()]),
+        ]
 
         self.enemy_units = [
-        Unit(6, 6, 100,  'enemy', enemy_images[0], [Pistolet(), Grenade(), Sniper()], move_range=1),
-        Unit(7, 6, 100, 'enemy', enemy_images[1], [Pistolet(), Grenade()], move_range=2),
-        Unit(6, 7, 100, 'enemy', enemy_images[2], [Grenade(), Soigner()], move_range=2),
-        Unit(7, 7, 100,  'enemy', enemy_images[3], [Sniper()], move_range=1),
-    ]
+            Unit(6, 6, 100, 1,1, 'enemy', enemy_images[0], [Pistolet(), Grenade(), Sniper()]),
+            Unit(7, 6, 100, 1,1, 'enemy', enemy_images[1], [Pistolet(), Grenade()]),
+            Unit(6, 7, 100, 1,1, 'enemy', enemy_images[2], [Grenade()]),
+            Unit(7, 7, 100, 1,1, 'enemy', enemy_images[3], [Sniper()]),
+        ]
 
 
         # Chaque joueur possède un nom et une liste d’unités.
