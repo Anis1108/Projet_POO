@@ -21,11 +21,12 @@ class Unit:
     - skills : Liste des compétences utilisables par l'unité.
     - move_range : Portée de déplacement de l'unité en cases.
     """
-    def __init__(self, x, y, health, , attack_power, defense_power, team, image, skills=None, move_range=1):
+    def __init__(self, x, y, health, attack_power, defense_power, team, image, skills=None, move_range=1):
         self.x = x  # Position X initiale dans la grille
         self.y = y  # Position Y initiale dans la grille
         self.health = health  # Points de vie de l'unité
-       
+        self.attack_power = attack_power
+        self.defense_power = defense_power
         self.team = team  # Équipe : 'player' ou 'enemy'
         self.image = image  # Image de l'unité (chargée avec Pygame)
         self.is_selected = False  # Indique si l'unité est actuellement sélectionnée
