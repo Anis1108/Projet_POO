@@ -32,7 +32,7 @@ class Game:
         
 
         self.screen = screen #Fenêtre principale où le jeu est dessiné.
-        self.background = pygame.image.load(r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\backr.png")
+        self.background = pygame.image.load(r"asset\backr.png")
         self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
 
         # Chaque unité est créée avec sa position initiale (x, y), sa santé, son équipe, une image, ses compétences, et sa distance de déplacement (move_range).
@@ -88,9 +88,9 @@ class Game:
         # Générer dynamiquement les obstacles
         self.obstacles = []
         self.obstacle_images = {
-            'obstacle_type1': r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\bonome.png",
-            'obstacle_type2': r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\mur.png",
-            'obstacle_type3': r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\nuage.png"
+            'obstacle_type1': r"asset\bonome.png",
+            'obstacle_type2': r"asset\mur.png",
+            'obstacle_type3': r"asset\nuage.png"
         }
 
         for obstacle_type, positions in manual_positions.items():
@@ -103,7 +103,7 @@ class Game:
             (8,0),(14,7),(0,8),(3,9),(14,10),(4,14),(11,15), # Ajoutez autant de cadeaux que vous voulez
         ]
 
-        gift_image_path = r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\gift.png"  # Image du cadeau
+        gift_image_path = r"asset\gift.png"  # Image du cadeau
 
         self.gifts = Gift.generate_gifts_from_positions(
             gift_image_path,
