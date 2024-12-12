@@ -2,10 +2,12 @@ import pygame
 from skill import Pistolet, Grenade, Sniper, Soigner
 from unit import Unit
 from joueur import Joueur
+from obstacle import Obstacle
+from gift import Gift
 
 
-GRID_SIZE = 12 #Taille de la grille du jeu (12x12 cases).
-CELL_SIZE = 60 #Taille en pixels d'une case de la grille (60x60 px).
+GRID_SIZE = 16 #Taille de la grille du jeu (16x16 cases).
+CELL_SIZE = 50 #Taille en pixels d'une case de la grille (50x50 px).
 INFO_PANEL_WIDTH = 200 #Largeur du panneau d'information à droite.
 WIDTH = GRID_SIZE * CELL_SIZE + INFO_PANEL_WIDTH #Dimensions totales de la fenêtre du jeu.
 HEIGHT = GRID_SIZE * CELL_SIZE
@@ -30,6 +32,8 @@ class Game:
         
 
         self.screen = screen #Fenêtre principale où le jeu est dessiné.
+        self.background = pygame.image.load(r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\backr.png")
+        self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
 
         # Chaque unité est créée avec sa position initiale (x, y), sa santé, son équipe, une image, ses compétences, et sa distance de déplacement (move_range).
         self.player_units = [
@@ -55,7 +59,56 @@ class Game:
         self.player_turn = True # Définit si c'est le tour du joueur.
         self.winner = None #Garde le nom du vainqueur lorsqu'une partie se termine.
 
+        # Positions des obstacles dans un dictionnaire
 
+        manual_positions = {
+            'obstacle_type1': [  # Bonhommes de neige
+                (0,5),(2,6),(13,6),(15,6),(3,7),(6,9),(8,9),
+                (0 ,12),(1,12),(3,14),(5,15),(7,15) ,(9,15),(13,15),
+            ],
+            'obstacle_type2': [  # Murs
+                (14,0),(15,0),(0,6),(1,6),(0,7),(1,7),(2,7),(12,7),(13,7),(14 ,17),
+                (15,7),(2,8),(3,8),(13,8),(14,8),(15,8),(7,8),(7,9),(13,9),(14,9),(15,9),
+                (6,10),(7,10),(8,10),(13,10),(15,10) ,(0,13),(1,13),(0 ,14),(1,14),(2,14),
+                (0,15), (1,15), (2,15), (3,15), (4,15), 
+
+            ],
+            'obstacle_type3': [  # Neige (zones plus difficiles à traverser)
+                (0, 1),(4,0),(7,0),(9,0),(13,0),(3,1) ,(6,1),(11,1),(12,1) ,
+                (8,2),(10,2), (2,3),(6,3),(3,4),(13,4),(15,4),(7,5),(10,5),
+                (5,6),(9,6),(0,9),(4,9),(11 ,9),(10,11),(5,12),(11,13),
+            ]
+        }
+
+
+
+
+        excluded_positions = {(unit.x, unit.y) for unit in self.player_units + self.enemy_units}
+        
+        # Générer dynamiquement les obstacles
+        self.obstacles = []
+        self.obstacle_images = {
+            'obstacle_type1': r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\bonome.png",
+            'obstacle_type2': r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\mur.png",
+            'obstacle_type3': r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\nuage.png"
+        }
+
+        for obstacle_type, positions in manual_positions.items():
+            image_path = self.obstacle_images[obstacle_type]
+            obstacles = Obstacle.generate_obstacles_from_positions(10, excluded_positions, image_path, positions)
+            self.obstacles.extend(obstacles)
+        
+        # Positions des cadeaux
+        gift_positions = [
+            (8,0),(14,7),(0,8),(3,9),(14,10),(4,14),(11,15), # Ajoutez autant de cadeaux que vous voulez
+        ]
+
+        gift_image_path = r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\gift.png"  # Image du cadeau
+
+        self.gifts = Gift.generate_gifts_from_positions(
+            gift_image_path,
+            positions=gift_positions
+        )
 
     # Gestion des tours
     def handle_player_turn(self):
@@ -108,10 +161,17 @@ class Game:
                         new_x = unit.x + dx # Calcule la nouvelle position après le déplacement.
                         new_y = unit.y + dy
                         if self.is_in_move_range(unit, new_x, new_y): # Vérifie si la nouvelle position est dans la portée de déplacement de l’unité.
-                            unit.move(dx, dy) # Met à jour les coordonnées (x, y) de l’unité si le déplacement est valide.
+                            unit.move(dx, dy, self.obstacles) # Met à jour les coordonnées (x, y) de l’unité si le déplacement est valide.
                             self.flip_display() # Met à jour l’affichage pour refléter la nouvelle position.
 
                         if event.key == pygame.K_SPACE: # Appuie sur la barre d’espace pour passer à l'action.
+                                                        # Vérifier si le joueur est sur un cadeau
+                            for gift in self.gifts:
+                                if gift.x == unit.x and gift.y == unit.y:
+                                    # Réduire la santé de l'unité et retirer le cadeau
+                                    unit.health += 1
+                                    self.gifts.remove(gift)
+                                    break
 
                             if not available_targets: # Si aucune cible n’est trouvée, le tour est marqué comme terminé pour cette unité.
                                 print("Aucune cible disponible. Tour terminé pour cette unité.")
@@ -573,7 +633,12 @@ class Game:
         Cette méthode est appelée pour réactualiser l'affichage à chaque événement important (mouvement, sélection).
         """
         # 1. Dessiner le fond noir pour nettoyer l'affichage
-        self.screen.fill(BLACK)
+        # Affiche l'image de fond
+        self.screen.blit(self.background, (0, 0)) 
+        for x in range(0, WIDTH, CELL_SIZE):
+            for y in range(0, HEIGHT, CELL_SIZE):
+                rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
+                pygame.draw.rect(self.screen, WHITE, rect, 1)
 
         # 2. Déterminer les unités actives et les unités adverses
         # Si c'est le tour du joueur, active_units correspond à ses unités, sinon celles de l'ennemi.
@@ -611,6 +676,13 @@ class Game:
 
         # 6. Afficher le panneau d'informations (santé des unités)
         self.display_health_panel()
+        
+        # Dessiner tous les obstacles
+        for obstacle in self.obstacles:
+            obstacle.draw(self.screen)
+        # Dessiner les cadeaux
+        for gift in self.gifts:
+            gift.draw(self.screen)
 
         # 7. Rafraîchir l'affichage pour prendre en compte tous les dessins précédents
         pygame.display.flip()

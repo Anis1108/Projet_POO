@@ -1,8 +1,8 @@
 import pygame
-
+from obstacle import *
 # Constantes pour la configuration du jeu
-GRID_SIZE = 12  # Taille de la grille du jeu (12x12 cases).
-CELL_SIZE = 60  # Taille en pixels d'une case de la grille (60x60 pixels).
+GRID_SIZE = 16  # Taille de la grille du jeu (12x12 cases).
+CELL_SIZE = 50  # Taille en pixels d'une case de la grille (60x60 pixels).
 
 # Couleurs
 GREEN = (0, 255, 0)  # Couleur verte utilisée pour le contour des unités sélectionnées
@@ -21,30 +21,40 @@ class Unit:
     - skills : Liste des compétences utilisables par l'unité.
     - move_range : Portée de déplacement de l'unité en cases.
     """
-    def __init__(self, x, y, health, attack_power, defense_power, team, image, skills=None, move_range=1):
+    def __init__(self, x, y, health, attack_power, defense_power, unit_type, image, skills=None, move_range=1):
         self.x = x  # Position X initiale dans la grille
         self.y = y  # Position Y initiale dans la grille
         self.health = health  # Points de vie de l'unité
         self.attack_power = attack_power
         self.defense_power = defense_power
-        self.team = team  # Équipe : 'player' ou 'enemy'
+        self.team = unit_type  # Équipe : 'player' ou 'enemy'
         self.image = image  # Image de l'unité (chargée avec Pygame)
         self.is_selected = False  # Indique si l'unité est actuellement sélectionnée
         self.skills = skills if skills else []  # Liste des compétences, vide par défaut
         self.initial_position = (x, y)  # Position initiale avant tout mouvement
         self.move_range = move_range  # Portée maximale de déplacement (en nombre de cases)
+        self.unit_type = unit_type
 
-    def move(self, dx, dy):
+    def move(self, dx, dy, obstacles):
         """
-        Déplace l'unité dans la grille si la position cible est valide.
-        - dx : Variation horizontale (gauche ou droite).
-        - dy : Variation verticale (haut ou bas).
-        
-        Condition : L'unité ne doit pas sortir des limites de la grille.
+        Déplace l'unité si la position cible n'est pas occupée par un obstacle.
+
+        Paramètres :
+        ------------
+        dx : int
+            Déplacement en x.
+        dy : int
+            Déplacement en y.
+        obstacles : list[Obstacle]
+            Liste des obstacles présents.
         """
-        if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
-            self.x += dx  # Mettre à jour la position X
-            self.y += dy  # Mettre à jour la position Y
+        new_x = self.x + dx
+        new_y = self.y + dy
+
+        # Vérifie qu'il n'y a pas d'obstacle à la nouvelle position
+        if not any(obstacle.x == new_x and obstacle.y == new_y for obstacle in obstacles): #######################
+            self.x = new_x
+            self.y = new_y
 
     def use_skill(self, skill_name, target=None):
         """
