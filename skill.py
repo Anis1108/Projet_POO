@@ -64,6 +64,8 @@ class Grenade(Skill):
         for pos in target_positions:  # Parcourir les positions visées par la grenade
             for enemy in enemies:  # Parcourir les unités ennemies
                 if (enemy.x, enemy.y) == pos:  # Vérifier si l'ennemi est sur une position ciblée
+                    damage = user.attack_power * self.power 
+                    damage = damage/enemy.defense_power
                     enemy.health -= self.power  # Appliquer les dégâts de la grenade
 
 
