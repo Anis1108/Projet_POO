@@ -109,6 +109,10 @@ class Game:
             gift_image_path,
             positions=gift_positions
         )
+        #interface 
+        self.font = pygame.font.Font(None, 36)
+        self.running = True
+
 
     # Gestion des tours
     def handle_player_turn(self):
@@ -733,7 +737,83 @@ class Game:
                             (GRID_SIZE * CELL_SIZE + 10, decalage))
 
 
+    def draw_main_menu(self):
+        font = pygame.font.Font(None, 36)
+        title_text = font.render("Jeu de stratégie", True, (255, 255, 255))
+        start_text = font.render("Démarrer", True, (255, 255, 255))
+        quit_text = font.render("Quitter", True, (255, 255, 255))
 
+        # Charger l'image de fond
+        background = pygame.image.load(r"asset\interface.png")  # Assurez-vous que l'image est dans le bon répertoire
+        background = pygame.transform.scale(background, (WIDTH, HEIGHT))  # Redimensionner pour correspondre à la fenêtre
+
+        # Afficher l'image de fond
+        self.screen.blit(background, (0, 0))
+
+        # Afficher les textes par-dessus l'image
+        self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 100))
+        self.screen.blit(start_text, (WIDTH // 2 - start_text.get_width() // 2, 200))
+        self.screen.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, 300))
+
+        pygame.display.flip()
+
+    def run_main_menu(self):
+        """Affiche le menu principal et gère les choix de l'utilisateur."""
+        running = True
+        while running:
+            self.draw_main_menu()
+
+            # Gérer les événements du menu
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:  # Appuyer sur Entrée pour commencer
+                        self.start_game()
+                        return
+                    elif event.key == pygame.K_ESCAPE:  # Appuyer sur Échap pour quitter
+                        pygame.quit()
+                        exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    # Si un clic gauche est détecté, vérifier la position
+                    x, y = pygame.mouse.get_pos()
+                    if self.is_start_button_hover(x, y):
+                        self.start_game()
+                        return
+                    elif self.is_quit_button_hover(x, y):
+                        pygame.quit()
+                        exit()
+
+    def is_start_button_hover(self, x, y):
+        """Vérifie si le curseur est sur le bouton 'Démarrer'."""
+        start_rect = pygame.Rect(WIDTH // 2 - 100, 200, 200, 50)
+        return start_rect.collidepoint(x, y)
+
+    def is_quit_button_hover(self, x, y):
+        """Vérifie si le curseur est sur le bouton 'Quitter'."""
+        quit_rect = pygame.Rect(WIDTH // 2 - 100, 300, 200, 50)
+        return quit_rect.collidepoint(x, y)
+
+    def start_game(self):
+        """Démarre le jeu après avoir appuyé sur 'Démarrer'."""
+        print("Le jeu commence...")
+        # Vous pouvez maintenant intégrer ici la logique pour démarrer le jeu.
+
+def draw_main_menu(self):
+    font = pygame.font.Font(None, 36)
+    title_text = font.render("Jeu de stratégie", True, (255, 255, 255))
+    start_text = font.render("Démarrer", True, (255, 255, 255))
+    quit_text = font.render("Quitter", True, (255, 255, 255))
+
+    self.screen.fill((0, 0, 0))
+    self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 100))
+    self.screen.blit(start_text, (WIDTH // 2 - start_text.get_width() // 2, 200))
+    self.screen.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, 300))
+
+    pygame.display.flip()
 
 
 pygame.init()  # Initialisation de Pygame 
@@ -752,6 +832,11 @@ enemy_images = [
 
 # Créer une fenêtre pour le jeu avec les dimensions WIDTH x HEIGHT
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+# Créer une instance de la classe Game, pas game
+game_instance = Game(screen) 
+
+# Afficher le menu principal avant de commencer
+game_instance.run_main_menu()
 
 # Définir le titre de la fenêtre
 pygame.display.set_caption("Jeu de tour par tour 2D")
