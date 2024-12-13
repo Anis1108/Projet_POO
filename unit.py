@@ -52,9 +52,10 @@ class Unit:
         new_y = self.y + dy
 
         # Vérifie qu'il n'y a pas d'obstacle à la nouvelle position
-        if not any(obstacle.x == new_x and obstacle.y == new_y for obstacle in obstacles): #######################
-            self.x = new_x
-            self.y = new_y
+        if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
+            if not any(obstacle.x == new_x and obstacle.y == new_y for obstacle in obstacles): #######################
+                self.x = new_x
+                self.y = new_y
 
     def use_skill(self, skill_name, target=None):
         """
