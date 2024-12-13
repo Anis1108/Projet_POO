@@ -6,7 +6,7 @@ from obstacle import Obstacle
 from gift import Gift
 
 
-GRID_SIZE = 16 #Taille de la grille du jeu (16x16 cases).
+GRID_SIZE = 16 #Taille de la grille du jeu (16x16 cases)
 CELL_SIZE = 50 #Taille en pixels d'une case de la grille (50x50 px).
 INFO_PANEL_WIDTH = 200 #Largeur du panneau d'information à droite.
 WIDTH = GRID_SIZE * CELL_SIZE + INFO_PANEL_WIDTH #Dimensions totales de la fenêtre du jeu.
