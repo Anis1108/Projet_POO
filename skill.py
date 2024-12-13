@@ -88,7 +88,7 @@ class Soigner(Skill):
     La méthode "use" est spécialisée pour soigner une unité alliée.
     """
     def __init__(self):
-        super().__init__("Soigner", -30, 3)  # Initialise avec le nom "Soigner", -30 (soins), et portée 2
+        super().__init__("Soigner", -30, 8)  # Initialise avec le nom "Soigner", -30 (soins), et portée 2
 
     def use(self, user, target):
         """
@@ -103,3 +103,24 @@ class Soigner(Skill):
         if abs(user.x - target.x) <= self.range and abs(user.y - target.y) <= self.range:
             # Ajouter les points de santé en s'assurant qu'ils ne dépassent pas 100
             target.health = min(100, target.health - self.power)
+class Teleportation(Skill):
+    """
+    Compétence Téléportation : Permet à une unité de se déplacer vers une case vide sans obstacle.
+    - Portée illimitée.
+    """
+    def __init__(self):
+        super().__init__("Teleportation", 0, float('inf'))  # Portée infinie
+
+    def use(self, user, target_position):
+        """
+        Utilise la compétence Téléportation pour se déplacer vers une position vide.
+        - target_position : Tuple (x, y) représentant la position ciblée.
+        - obstacles : Liste des obstacles sur la carte.
+        - units : Liste de toutes les unités présentes sur la carte.
+        """
+        target_x, target_y = target_position
+
+        # Met à jour la position de l'unité
+        user.x, user.y = target_position
+        print(f"{user} s'est téléporté en ({target_x}, {target_y}).")
+        return True
