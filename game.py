@@ -1,17 +1,18 @@
 import pygame
-from skill import Pistolet, Grenade, Sniper, Soigner
+from skill import Pistolet, Grenade, Sniper, Soigner, Teleportation
 from unit import Unit
 from joueur import Joueur
 from obstacle import Obstacle
 from gift import Gift
 
 
-GRID_SIZE = 16 #Taille de la grille du jeu (16x16 cases)
+GRID_SIZE = 16 #Taille de la grille du jeu (16x16 cases).
 CELL_SIZE = 50 #Taille en pixels d'une case de la grille (50x50 px).
 INFO_PANEL_WIDTH = 200 #Largeur du panneau d'information à droite.
 WIDTH = GRID_SIZE * CELL_SIZE + INFO_PANEL_WIDTH #Dimensions totales de la fenêtre du jeu.
-HEIGHT = GRID_SIZE * CELL_SIZE
+HEIGHT = GRID_SIZE * CELL_SIZE 
 FPS = 30 #Limite d'images par seconde
+
 
 # Couleurs
 WHITE = (255, 255, 255)
@@ -32,22 +33,22 @@ class Game:
         
 
         self.screen = screen #Fenêtre principale où le jeu est dessiné.
-        self.background = pygame.image.load(r"asset\backr.png")
-        self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
+        self.background = pygame.image.load(r"asset/backr.png")
+        self.background = pygame.transform.scale(self.background, (GRID_SIZE * CELL_SIZE, HEIGHT))
 
         # Chaque unité est créée avec sa position initiale (x, y), sa santé, son équipe, une image, ses compétences, et sa distance de déplacement (move_range).
         self.player_units = [
-            Unit(0, 0, 100, 3,3, 'player', player_images[0], [Pistolet(), Grenade(), Sniper()]),
-            Unit(1, 0, 100, 2,1, 'player', player_images[1], [Pistolet(), Grenade()]),
-            Unit(2, 0, 100, 2,1, 'player', player_images[2], [Grenade()]),
-            Unit(3, 0, 100, 2,1, 'player', player_images[3], [Sniper()]),
+            Unit(0, 0, 100, 3,3, 'player', player_images[0], [Soigner()],move_range=6),
+            Unit(1, 0, 100, 2,1, 'player', player_images[1], [Pistolet(), Grenade(), Teleportation()],move_range=4),
+            Unit(2, 0, 100, 2,1, 'player', player_images[2], [Grenade()],move_range=3),
+            Unit(3, 0, 100, 2,1, 'player', player_images[3], [Sniper()],move_range=5),
         ]
 
         self.enemy_units = [
-            Unit(6, 6, 100, 1,1, 'enemy', enemy_images[0], [Pistolet(), Grenade(), Sniper()]),
-            Unit(7, 6, 100, 1,1, 'enemy', enemy_images[1], [Pistolet(), Grenade()]),
-            Unit(6, 7, 100, 1,1, 'enemy', enemy_images[2], [Grenade()]),
-            Unit(7, 7, 100, 1,1, 'enemy', enemy_images[3], [Sniper()]),
+            Unit(6, 6, 100, 1,1, 'enemy', enemy_images[0], [Pistolet(), Grenade(), Sniper()],move_range=4),
+            Unit(7, 6, 100, 1,1, 'enemy', enemy_images[1], [Pistolet(), Grenade()],move_range=5),
+            Unit(6, 7, 100, 1,1, 'enemy', enemy_images[2], [Grenade(), Teleportation()],move_range=4),
+            Unit(7, 7, 100, 1,1, 'enemy', enemy_images[3], [Sniper()],move_range=4),
         ]
 
 
@@ -88,9 +89,9 @@ class Game:
         # Générer dynamiquement les obstacles
         self.obstacles = []
         self.obstacle_images = {
-            'obstacle_type1': r"asset\bonome.png",
-            'obstacle_type2': r"asset\mur.png",
-            'obstacle_type3': r"asset\nuage.png"
+            'obstacle_type1': r"asset/bonome.png",
+            'obstacle_type2': r"asset/mur.png",
+            'obstacle_type3': r"asset/nuage.png"
         }
 
         for obstacle_type, positions in manual_positions.items():
@@ -103,7 +104,7 @@ class Game:
             (8,0),(14,7),(0,8),(3,9),(14,10),(4,14),(11,15), # Ajoutez autant de cadeaux que vous voulez
         ]
 
-        gift_image_path = r"asset\gift.png"  # Image du cadeau
+        gift_image_path = r"asset/gift.png"  # Image du cadeau
 
         self.gifts = Gift.generate_gifts_from_positions(
             gift_image_path,
@@ -193,6 +194,13 @@ class Game:
                                             self.remove_dead_units() # Elimine les unités avec health <= 0.
                                             if self.check_game_over(): # Vérifie si une équipe a perdu (fin du jeu).
                                                 return
+                                    elif skill.name == "Teleportation":
+                                        print("Sélectionnez une case vide pour vous téléporter.")
+                                        target_position = self.handle_target_position_selection(unit)
+                                        if target_position:
+                                            success = skill.use(unit, target_position, self.obstacles, self.player.units + self.enemy.units)
+                                            if success:
+                                                has_acted = True
 
                                     elif skill.name == "Soigner":
                                         target = self.handle_target_selection(unit, is_heal=True, skill_range=skill.range) # Permet de sélectionner une cible valide à soigner.
@@ -215,6 +223,10 @@ class Game:
 
         self.switch_turn() # Passe le tour à l’autre joueur.
 
+
+    
+
+    
 
 
     """ unit : L’unité en question, qui tente de se déplacer.
@@ -337,6 +349,92 @@ class Game:
 
 
 
+    def is_valid_position(self, x, y):
+        """
+        Vérifie si la case à la position (x, y) est valide pour le curseur.
+        Une case est considérée comme valide si :
+            - Elle ne contient pas d'obstacle.
+            - Elle ne contient pas de cadeau.
+
+        Paramètres :
+            - x (int) : Coordonnée horizontale de la case.
+            - y (int) : Coordonnée verticale de la case.
+
+        Retourne :
+            - True si la case est valide (libre d'obstacle et de cadeau).
+            - False sinon.
+        """
+        # Parcourt la liste des obstacles
+        for obstacle in self.obstacles:  
+            # Vérifie si un obstacle occupe la position (x, y)
+            if obstacle.x == x and obstacle.y == y:
+                return False  # Retourne False si un obstacle est trouvé
+
+        # Parcourt la liste des cadeaux
+        for gift in self.gifts:  
+            # Vérifie si un cadeau occupe la position (x, y)
+            if gift.x == x and gift.y == y:
+                return False  # Retourne False si un cadeau est trouvé
+
+        # Si aucune condition n'empêche le curseur, la case est valide
+        return True  # Retourne True si la case est libre
+
+
+    def handle_target_position_selection(self, unit):
+        """
+        Permet de sélectionner une case valide sur la carte (sans obstacles ni cadeaux).
+        Le curseur peut se déplacer sur des cases avec des unités.
+
+        Retourne :
+            - (cursor_x, cursor_y) : Tuple représentant les coordonnées de la case sélectionnée.
+        """
+        cursor_x, cursor_y = unit.x, unit.y # Position initiale du curseur en haut à gauche de la grille
+
+        while True:  # Boucle principale pour gérer le déplacement et la sélection
+            # Actualise l'affichage de la grille et du jeu
+            self.flip_display()
+
+            # Dessine un rectangle vert pour représenter le curseur à la position actuelle
+            pygame.draw.rect(self.screen, GREEN, 
+                            (cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
+
+            # Met à jour l'écran pour afficher les changements
+            pygame.display.flip()
+
+            # Gestion des événements Pygame
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:  # Gestion de la fermeture de la fenêtre
+                    pygame.quit()
+                    exit()
+
+                if event.type == pygame.KEYDOWN:  # Détection d'une touche enfoncée
+                    new_x, new_y = cursor_x, cursor_y  # Position temporaire pour vérifier le déplacement
+
+                    # Déplacement du curseur vers le haut
+                    if event.key == pygame.K_UP and cursor_y > 0:
+                        new_y -= 1
+                    # Déplacement du curseur vers le bas
+                    elif event.key == pygame.K_DOWN and cursor_y < GRID_SIZE - 1:
+                        new_y += 1
+                    # Déplacement du curseur vers la gauche
+                    elif event.key == pygame.K_LEFT and cursor_x > 0:
+                        new_x -= 1
+                    # Déplacement du curseur vers la droite
+                    elif event.key == pygame.K_RIGHT and cursor_x < GRID_SIZE - 1:
+                        new_x += 1
+
+                    # Vérifie si la nouvelle position est valide
+                    if self.is_valid_position(new_x, new_y):
+                        cursor_x, cursor_y = new_x, new_y  # Met à jour les coordonnées du curseur
+
+                    # Validation de la position avec la touche Entrée
+                    if event.key == pygame.K_RETURN:
+                        if self.is_valid_position(cursor_x, cursor_y):
+                            return cursor_x, cursor_y  # Retourne la position validée
+                        else:
+                            print("Case invalide. Choisissez une autre position.")
+
+
 
 
     
@@ -375,7 +473,7 @@ class Game:
 
             # Dessiner les cases valides dans la zone de déplacement et de portée
             for x, y in move_range:
-                pygame.draw.rect(self.screen, CYAN, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
+                pygame.draw.rect(self.screen, BLUE, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
 
             # Dessiner le curseur à la position actuelle
             pygame.draw.rect(self.screen, GREEN, (cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
@@ -603,29 +701,35 @@ class Game:
 
     def bar(self, unit):
         """
-        Dessine une barre colorée au-dessus des unités pour reconnaitre les unités.
-
-        - La barre est dessinée juste au-dessus de la position de l'unité.
+        Dessine une barre de santé au-dessus de la tête de chaque unité.
+        - Bleu pour les unités du joueur 1.
+        - Rouge pour les unités du joueur 2.
+        - La taille de la barre dépend du niveau de santé.
 
         Paramètres :
-        - unit : L'unité dont la barre de vie doit être affichée.
+        - unit : L'unité pour laquelle la barre de santé est affichée.
         """
-        # Déterminer la couleur de la barre en fonction de l'équipe de l'unité
-        # BLEU pour les unités du joueur, ROUGE pour les unités ennemies
-        bar_color = BLUE if unit.team == 'player' else RED
+        # Définir les couleurs des barres selon l'équipe
+        bar_color = BLUE if unit.team == 'player' else RED  # Bleu pour joueur 1, Rouge pour joueur 2
 
-        # Définir les dimensions de la barre de vie
-        bar_width = CELL_SIZE - 4  # Largeur légèrement inférieure à celle de la cellule
-        bar_height = 5  # Hauteur fixe de la barre (5 pixels)
+        # Taille de la barre de santé
+        max_bar_width = CELL_SIZE - 4  # Largeur maximale de la barre
+        bar_height = 5  # Hauteur de la barre
 
-        # Calculer la position X pour centrer la barre horizontalement par rapport à la cellule
-        bar_x = unit.x * CELL_SIZE + 2  # Position X centrée avec un petit décalage
+        # Calcul de la largeur actuelle de la barre (en fonction de la santé)
+        health_ratio = max(0, unit.health / 100)  # Ratio entre 0 et 1
+        current_bar_width = int(max_bar_width * health_ratio)
 
-        # Calculer la position Y pour placer la barre juste au-dessus de l'unité
-        bar_y = unit.y * CELL_SIZE - 8  # Position Y : au-dessus de la cellule
+        # Position de la barre : centrée horizontalement et placée au-dessus de la cellule
+        bar_x = unit.x * CELL_SIZE + 2
+        bar_y = unit.y * CELL_SIZE - 8  # Décalage vers le haut
 
-        # Dessiner un rectangle plein pour représenter la barre de vie
-        pygame.draw.rect(self.screen, bar_color, (bar_x, bar_y, bar_width, bar_height))
+        # Dessiner l'arrière-plan gris (barre vide)
+        pygame.draw.rect(self.screen, (50, 50, 50), (bar_x, bar_y, max_bar_width, bar_height))
+
+        # Dessiner la barre de santé actuelle (bleu ou rouge)
+        pygame.draw.rect(self.screen, bar_color, (bar_x, bar_y, current_bar_width, bar_height))
+
 
 
 
@@ -662,7 +766,7 @@ class Game:
                         if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE:
                             # Dessiner un rectangle CYAN autour des cases valides dans la portée de déplacement
                             pygame.draw.rect(
-                                self.screen, CYAN,  # Couleur CYAN pour indiquer la zone de déplacement
+                                self.screen, BLUE,  # Couleur CYAN pour indiquer la zone de déplacement
                                 (zone_x * CELL_SIZE, zone_y * CELL_SIZE, CELL_SIZE, CELL_SIZE),  # Position et dimensions
                                 width=1  # Épaisseur du contour de 1 pixel
                             )
@@ -697,44 +801,69 @@ class Game:
 
     def display_health_panel(self):
         """
-        Affiche un panneau d'informations sur le côté droit de l'écran, montrant la santé des unités.
+        Affiche un panneau d'informations sur le côté droit de l'écran, montrant uniquement la santé des unités.
+        - Utilise des barres de santé colorées pour une meilleure lisibilité.
         - Les unités du joueur sont affichées en bleu.
         - Les unités ennemies sont affichées en rouge.
-        
-        
         """
-        # Dessiner un rectangle blanc pour le panneau d'informations
-        # Le panneau couvre toute la hauteur de l'écran à droite de la grille
-        pygame.draw.rect(self.screen, WHITE, (GRID_SIZE * CELL_SIZE, 0, INFO_PANEL_WIDTH, HEIGHT), 1)
+        # Dessiner un fond gris pour le panneau d'informations
+        pygame.draw.rect(self.screen, (50, 50, 50), (GRID_SIZE * CELL_SIZE, 0, INFO_PANEL_WIDTH, HEIGHT))  
 
         # Créer une police pour afficher les informations du texte
-        font = pygame.font.SysFont('Arial', 18)  # Police Arial, taille 18 pixels
+        font = pygame.font.SysFont('Arial', 20, bold=True)  # Police Arial, taille 20, en gras
 
-        # Initialiser un décalage vertical pour placer les lignes de texte successives
-        decalage = 10  # Premier texte à 10 pixels du haut
+        # Décalage initial pour le texte
+        decalage = 20
 
-        # Afficher le titre pour les unités du joueur
-        self.screen.blit(font.render("Player Units:", True, BLUE), (GRID_SIZE * CELL_SIZE + 10, decalage))
+        # Afficher un titre pour les unités du joueur
+        player_title = font.render("Player 1", True, BLUE)
+        self.screen.blit(player_title, (GRID_SIZE * CELL_SIZE + 10, decalage))
 
-        # Afficher les informations de santé pour chaque unité du joueur
+        # Afficher les barres de santé pour chaque unité du joueur
         for unit in self.player.units:
-            decalage += 20  # Ajouter un espace vertical de 20 pixels
-            # Afficher la position (x, y) et les points de vie de l'unité
-            self.screen.blit(font.render(f"({unit.x}, {unit.y}): {unit.health} HP", True, WHITE),
-                            (GRID_SIZE * CELL_SIZE + 10, decalage))
+            decalage += 30  # Espacement entre chaque unité
+            self._draw_health_bar(unit.health, decalage, color=BLUE)
 
-        # Ajouter un espace vertical avant d'afficher les unités ennemies
-        decalage += 30  # Grand espace pour séparer les deux sections
+        # Ajouter un grand espace avant les unités ennemies
+        decalage += 50
 
-        # Afficher le titre pour les unités ennemies
-        self.screen.blit(font.render("Enemy Units:", True, RED), (GRID_SIZE * CELL_SIZE + 10, decalage))
+        # Afficher un titre pour les unités ennemies
+        enemy_title = font.render("Player 2", True, RED)
+        self.screen.blit(enemy_title, (GRID_SIZE * CELL_SIZE + 10, decalage))
 
-        # Afficher les informations de santé pour chaque unité ennemie
+        # Afficher les barres de santé pour chaque unité ennemie
         for unit in self.enemy.units:
-            decalage += 20  # Ajouter un espace vertical de 20 pixels
-            # Afficher la position (x, y) et les points de vie de l'unité
-            self.screen.blit(font.render(f"({unit.x}, {unit.y}): {unit.health} HP", True, WHITE),
-                            (GRID_SIZE * CELL_SIZE + 10, decalage))
+            decalage += 30  # Espacement entre chaque unité
+            self._draw_health_bar(unit.health, decalage, color=RED)
+
+    def _draw_health_bar(self, health, y_position, color):
+        """
+        Dessine une barre de santé pour une unité à une position donnée.
+        - health : La valeur de santé de l'unité (entre 0 et 100).
+        - y_position : La position verticale où dessiner la barre.
+        - color : Couleur principale de la barre.
+        """
+        bar_width = INFO_PANEL_WIDTH - 40  # Largeur de la barre de santé
+        bar_height = 20  # Hauteur de la barre
+        x_position = GRID_SIZE * CELL_SIZE + 10  # Position horizontale de départ
+
+        # Calculer la largeur de la barre de santé en fonction de la santé restante
+        health_ratio = max(0, min(health / 100, 1))  # Assurez-vous que la santé est entre 0 et 100
+        current_bar_width = int(bar_width * health_ratio)
+
+        # Dessiner l'arrière-plan de la barre (barre vide, en gris foncé)
+        pygame.draw.rect(self.screen, (100, 100, 100), (x_position, y_position, bar_width, bar_height))
+
+        # Dessiner la barre de santé actuelle (barre remplie)
+        pygame.draw.rect(self.screen, color, (x_position, y_position, current_bar_width, bar_height))
+
+        # Afficher la valeur de la santé au centre de la barre
+        font = pygame.font.SysFont('Arial', 16)
+        health_text = font.render(f"{health} HP", True, WHITE)
+        text_x = x_position + (bar_width // 2 - health_text.get_width() // 2)
+        text_y = y_position + (bar_height // 2 - health_text.get_height() // 2)
+        self.screen.blit(health_text, (text_x, text_y))
+
 
 
     def draw_main_menu(self):
@@ -744,7 +873,7 @@ class Game:
         quit_text = font.render("Quitter", True, (255, 255, 255))
 
         # Charger l'image de fond
-        background = pygame.image.load(r"asset\interface.png")  # Assurez-vous que l'image est dans le bon répertoire
+        background = pygame.image.load(r"asset/interface.png")  # Assurez-vous que l'image est dans le bon répertoire
         background = pygame.transform.scale(background, (WIDTH, HEIGHT))  # Redimensionner pour correspondre à la fenêtre
 
         # Afficher l'image de fond
