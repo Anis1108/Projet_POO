@@ -1,6 +1,6 @@
 import pygame
 import random
-from gift import *
+from objet import *
 
 CELL_SIZE = 50  # Taille d'une case
 GRID_WIDTH = 16  # Largeur de la grille en nombre de cases

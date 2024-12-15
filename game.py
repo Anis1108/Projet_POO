@@ -3,8 +3,8 @@ from skill import Pistolet, Grenade, Sniper, Soigner, Teleportation
 from unit import Unit
 from joueur import Joueur
 from obstacle import Obstacle
-from gift import Gift
-from bombe import Bombe
+from objet import Gift, Bombe 
+
 
 # Taille de la grille et de chaque cellule du jeu
 GRID_SIZE = 16  # Taille de la grille (16x16 cases).
