@@ -57,37 +57,6 @@ class Obstacle:
 
         return obstacles
 
-    """
-    @staticmethod
-    def generate_random_obstacles(num_obstacles, excluded_positions, image_path):
-        ""
-        Génère une liste d'obstacles aléatoires.
-
-        Paramètres :
-        ------------
-        num_obstacles : int
-            Nombre d'obstacles à générer.
-        excluded_positions : set de tuples (x, y)
-            Positions à éviter (unités déjà placées, départ, etc.).
-        image_path : str
-            Chemin vers l'image utilisée pour les obstacles.
-
-        Retourne :
-        ---------
-        list[Obstacle]
-            Une liste d'instances d'Obstacle.
-        "
-        obstacles = []
-        for _ in range(num_obstacles):
-            while True:
-                x = random.randint(0, GRID_WIDTH - 1)
-                y = random.randint(0, GRID_HEIGHT - 1)
-                if (x, y) not in excluded_positions:  # Vérifie si la position est libre
-                    excluded_positions.add((x, y))
-                    obstacles.append(Obstacle(x, y, "Obstacle", image_path))
-                    break
-        return obstacles
-    """
     
     def can_place_obstacle(self, x, y):
         """
