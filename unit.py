@@ -47,27 +47,29 @@ class Unit:
         new_x = self.x + dx
         new_y = self.y + dy
 
-        # Vérifier les collisions avec les obstacles
-        for obstacle in obstacles:
-            if obstacle.x == new_x and obstacle.y == new_y:
-                if obstacle.type == "obstacles":
-                    # Si l'unité a le pouvoir, elle peut traverser le nuage
-                    if self.has_power:
-                        print("L'unité traverse les obstacles grâce à son pouvoir !")
-                        self.x = new_x
-                        self.y = new_y
-                        return
+
+        if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
+            # Vérifier les collisions avec les obstacles
+            for obstacle in obstacles:
+                if obstacle.x == new_x and obstacle.y == new_y:
+                    if obstacle.type == "obstacles":
+                        # Si l'unité a le pouvoir, elle peut traverser le nuage
+                        if self.has_power:
+                            print("L'unité traverse les obstacles grâce à son pouvoir !")
+                            self.x = new_x
+                            self.y = new_y
+                            return
+                        else:
+                            print("un obstacle bloque le passage.")
+                            return
                     else:
-                        print("un obstacle bloque le passage.")
+                        print("Un autre obstacle bloque le passage.")
                         return
-                else:
-                    print("Un autre obstacle bloque le passage.")
-                    return
 
         # Si aucun obstacle ne bloque, l'unité peut se déplacer
-        self.x = new_x
-        self.y = new_y
-        print(f"L'unité s'est déplacée en ({self.x}, {self.y}).")
+            self.x = new_x
+            self.y = new_y
+            print(f"L'unité s'est déplacée en ({self.x}, {self.y}).")
     def use_skill(self, skill_name, target=None):
         """
         Utilise une compétence de l'unité sur une cible.
