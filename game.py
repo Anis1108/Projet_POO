@@ -4,7 +4,7 @@ from unit import Unit
 from joueur import Joueur
 from obstacle import Obstacle
 from gift import Gift
-
+from bombe import Bombe
 
 # Taille de la grille et de chaque cellule du jeu
 GRID_SIZE = 16  # Taille de la grille (16x16 cases).
@@ -71,6 +71,10 @@ class Game:
         ]
         gift_image_path = r"C:asset\gift.png"
         self.gifts = Gift.generate_gifts_from_positions(gift_image_path, positions=gift_positions)  # Création des cadeaux dans le jeu.
+
+        bombe_positions =[(7,2) ,(12,3) ,(1,10),(13,11),(4,13),(10,14),(5,5)]
+        bombe_image_path=r"C:asset\bombe.png"
+        self.bombes=Bombe.generate_bombes_from_positions(bombe_image_path, positions=bombe_positions)
 
         # Initialisation des obstacles dans le jeu
         self.obstacles = []
@@ -279,6 +283,13 @@ class Game:
                             unit.move(dx, dy, self.obstacles) # Met à jour les coordonnées (x, y) de l’unité si le déplacement est valide.
                             self.flip_display() # Met à jour l’affichage pour refléter la nouvelle position.
 
+                            # Vérifie si l'unité est sur une bombe et applique l'effet de la bombe
+                            for bombe in self.bombes:
+                                if bombe.x == unit.x and bombe.y == unit.y:
+                                    unit.health = max(unit.health - 10, 0)  # Applique la réduction de 10 en santé, sans dépasser 0.
+                                    self.bombes.remove(bombe)  # Retire la bombe du terrain
+                                    
+                                    break
                         if event.key == pygame.K_SPACE: # Appuie sur la barre d’espace pour passer à l'action.
                                                         # Vérifier si le joueur est sur un cadeau
                             for gift in self.gifts:
@@ -901,6 +912,8 @@ class Game:
         # Dessiner les cadeaux
         for gift in self.gifts:
             gift.draw(self.screen)
+        for bombe in self.bombes :
+            bombe.draw(self.screen)
 
         # 7. Rafraîchir l'affichage pour prendre en compte tous les dessins précédents
         pygame.display.flip()
