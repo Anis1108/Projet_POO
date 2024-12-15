@@ -33,30 +33,41 @@ class Unit:
         self.skills = skills if skills else []  # Liste des compétences, vide par défaut
         self.initial_position = (x, y)  # Position initiale avant tout mouvement
         self.move_range = move_range  # Portée maximale de déplacement (en nombre de cases)
-        self.unit_type = unit_type
+        self.has_power = False  # Par défaut, l'unité n'a pas de pouvoir spécial
+    
+
+    def detect_cadeau(self, cadeau):
+        # Si l'unité trouve un cadeau, elle obtient le pouvoir
+        if self.x == cadeau.x and self.y == cadeau.y and not cadeau.collected:
+            cadeau.collect()
+            self.has_power = True
+            print("L'unité a obtenu le pouvoir de traverser les obstacles ! ")
 
     def move(self, dx, dy, obstacles):
-        """
-        Déplace l'unité si la position cible n'est pas occupée par un obstacle.
-
-        Paramètres :
-        ------------
-        dx : int
-            Déplacement en x.
-        dy : int
-            Déplacement en y.
-        obstacles : list[Obstacle]
-            Liste des obstacles présents.
-        """
         new_x = self.x + dx
         new_y = self.y + dy
 
-        # Vérifie qu'il n'y a pas d'obstacle à la nouvelle position
-        if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
-            if not any(obstacle.x == new_x and obstacle.y == new_y for obstacle in obstacles): #######################
-                self.x = new_x
-                self.y = new_y
+        # Vérifier les collisions avec les obstacles
+        for obstacle in obstacles:
+            if obstacle.x == new_x and obstacle.y == new_y:
+                if obstacle.type == "obstacles":
+                    # Si l'unité a le pouvoir, elle peut traverser le nuage
+                    if self.has_power:
+                        print("L'unité traverse les obstacles grâce à son pouvoir !")
+                        self.x = new_x
+                        self.y = new_y
+                        return
+                    else:
+                        print("un obstacle bloque le passage.")
+                        return
+                else:
+                    print("Un autre obstacle bloque le passage.")
+                    return
 
+        # Si aucun obstacle ne bloque, l'unité peut se déplacer
+        self.x = new_x
+        self.y = new_y
+        print(f"L'unité s'est déplacée en ({self.x}, {self.y}).")
     def use_skill(self, skill_name, target=None):
         """
         Utilise une compétence de l'unité sur une cible.

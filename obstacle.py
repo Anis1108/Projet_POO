@@ -1,5 +1,6 @@
 import pygame
 import random
+from gift import *
 
 CELL_SIZE = 50  # Taille d'une case
 GRID_WIDTH = 16  # Largeur de la grille en nombre de cases
@@ -13,6 +14,8 @@ class Obstacle:
         self.obstacle_type = obstacle_type
         self.image = pygame.image.load(image_path)  # Chargement de l'image
         self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))  # Redimensionner l'image
+        self.type = "obstacles"                                    
+        self.is_passable = False  # Par défaut, le nuage est bloquant
 
     def draw(self, screen):
         """Dessiner l'obstacle à sa position."""

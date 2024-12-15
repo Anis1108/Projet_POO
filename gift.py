@@ -8,6 +8,11 @@ class Gift:
         self.y = y
         self.image = pygame.image.load(image)
         self.image = pygame.transform.scale(self.image, (CELL_SIZE, CELL_SIZE))  # Adapter à la taille des cellules
+        self.collected = False
+
+    def collect(self):
+        self.collected = True
+        print("Cadeau collecté !")
 
     def draw(self, screen):
         # Calculer la position dans la fenêtre

@@ -6,15 +6,15 @@ from obstacle import Obstacle
 from gift import Gift
 
 
-GRID_SIZE = 16 #Taille de la grille du jeu (16x16 cases).
-CELL_SIZE = 50 #Taille en pixels d'une case de la grille (50x50 px).
-INFO_PANEL_WIDTH = 200 #Largeur du panneau d'information à droite.
-WIDTH = GRID_SIZE * CELL_SIZE + INFO_PANEL_WIDTH #Dimensions totales de la fenêtre du jeu.
-HEIGHT = GRID_SIZE * CELL_SIZE 
-FPS = 30 #Limite d'images par seconde
+# Taille de la grille et de chaque cellule du jeu
+GRID_SIZE = 16  # Taille de la grille (16x16 cases).
+CELL_SIZE = 50  # Taille d'une cellule (50x50 px).
+INFO_PANEL_WIDTH = 200  # Largeur du panneau d'information.
+WIDTH = GRID_SIZE * CELL_SIZE + INFO_PANEL_WIDTH  # Largeur de la fenêtre du jeu.
+HEIGHT = GRID_SIZE * CELL_SIZE  # Hauteur de la fenêtre du jeu.
+FPS = 30  # Limite d'images par seconde
 
-
-# Couleurs
+# Définition des couleurs utilisées dans le jeu
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -26,117 +26,112 @@ HOVER_COLOR = (0, 255, 255)
 TEXT_COLOR = (255, 255, 255)
 
 
-
-
-"""Classe Game"""
+# Classe principale du jeu
 class Game:
-    
-
     def __init__(self, screen, difficulty="facile"):
-        
+        self.screen = screen  # Fenêtre principale du jeu.
+        self.difficulty = difficulty  # Difficulté du jeu.
+        self.background = pygame.image.load(r"asset/backr.png")  # Image de fond.
+        self.background = pygame.transform.scale(self.background, (GRID_SIZE * CELL_SIZE, HEIGHT))  # Mise à l'échelle de l'image de fond.
 
-        self.screen = screen #Fenêtre principale où le jeu est dessiné.
-        self.difficulty = difficulty  # Définir la difficulté
-        self.background = pygame.image.load(r"asset/backr.png")
-        self.background = pygame.transform.scale(self.background, (GRID_SIZE * CELL_SIZE, HEIGHT))
-
-        # Chaque unité est créée avec sa position initiale (x, y), sa santé, son équipe, une image, ses compétences, et sa distance de déplacement (move_range).
+        # Initialisation des unités du joueur avec leurs caractéristiques
         self.player_units = [
-            Unit(0, 0, 100, 3,3, 'player', player_images[0], [Soigner()],move_range=6),
-            Unit(1, 0, 100, 2,1, 'player', player_images[1], [Pistolet(), Grenade(), Teleportation()],move_range=4),
-            Unit(2, 0, 100, 2,1, 'player', player_images[2], [Grenade()],move_range=3),
-            Unit(3, 0, 100, 2,1, 'player', player_images[3], [Sniper()],move_range=5),
+            Unit(0, 0, 100, 3, 3, 'player', player_images[0], [Soigner()], move_range=6),
+            Unit(1, 0, 100, 2, 1, 'player', player_images[1], [Pistolet(), Grenade(), Teleportation()], move_range=4),
+            Unit(2, 0, 100, 2, 1, 'player', player_images[2], [Grenade()], move_range=3),
+            Unit(3, 0, 100, 2, 1, 'player', player_images[3], [Sniper()], move_range=5),
         ]
 
+        # Initialisation des unités ennemies avec leurs caractéristiques
         self.enemy_units = [
-            Unit(6, 6, 100, 1,1, 'enemy', enemy_images[0], [Pistolet(), Grenade(), Sniper()],move_range=4),
-            Unit(7, 6, 100, 1,1, 'enemy', enemy_images[1], [Pistolet(), Grenade()],move_range=5),
-            Unit(6, 7, 100, 1,1, 'enemy', enemy_images[2], [Grenade(), Teleportation()],move_range=4),
-            Unit(7, 7, 100, 1,1, 'enemy', enemy_images[3], [Sniper()],move_range=4),
+            Unit(6, 6, 100, 1, 1, 'enemy', enemy_images[0], [Pistolet(), Grenade(), Sniper()], move_range=4),
+            Unit(7, 6, 100, 1, 1, 'enemy', enemy_images[1], [Pistolet(), Grenade()], move_range=5),
+            Unit(6, 7, 100, 1, 1, 'enemy', enemy_images[2], [Grenade(), Teleportation()], move_range=4),
+            Unit(7, 7, 100, 1, 1, 'enemy', enemy_images[3], [Sniper()], move_range=4),
         ]
 
+        # Initialisation des joueurs
+        self.player = Joueur("Player 1", self.player_units)  # Création du joueur 1 avec ses unités.
+        self.enemy = Joueur("Player 2", self.enemy_units)  # Création du joueur 2 avec ses unités.
 
-        # Chaque joueur possède un nom et une liste d’unités.
-        self.player = Joueur("Player 1", self.player_units)
-        self.enemy = Joueur("Player 2", self.enemy_units)
-
+        self.player_turn = True  # Indicateur pour savoir si c'est le tour du joueur.
+        self.winner = None  # Garde le nom du vainqueur à la fin du jeu.
         
-        self.player_turn = True # Définit si c'est le tour du joueur.
-        self.winner = None #Garde le nom du vainqueur lorsqu'une partie se termine.
-        #interface 
-        self.game_started = False  # Indicateur si le jeu a commencé
+        # Variables pour l'interface du jeu
+        self.game_started = False  # Indicateur si le jeu a commencé ou non.
         self.obstacle_images = {
-            'obstacle_type1': r"asset/bonome.png",
-            'obstacle_type2': r"asset/mur.png",
-            'obstacle_type3': r"asset/nuage.png"
+            'obstacle_type1': r"asset/bonome.png",  # Image du bonhomme de neige.
+            'obstacle_type2': r"asset/mur.png",  # Image du mur.
+            'obstacle_type3': r"asset/nuage.png"  # Image du nuage.
         }
 
+        # Positions des cadeaux (objets à récupérer) dans le jeu
         gift_positions = [
             (8, 0), (14, 7), (0, 8), (3, 9), (14, 10), (4, 14), (11, 15),
         ]
-        gift_image_path = r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\gift.png"
-        self.gifts = Gift.generate_gifts_from_positions(gift_image_path, positions=gift_positions)
+        gift_image_path = r"C:asset\gift.png"
+        self.gifts = Gift.generate_gifts_from_positions(gift_image_path, positions=gift_positions)  # Création des cadeaux dans le jeu.
 
+        # Initialisation des obstacles dans le jeu
         self.obstacles = []
-        self.initialize_obstacles()
+        self.initialize_obstacles()  # Initialisation des obstacles selon la difficulté.
+
     def initialize_obstacles(self):
-        """Initialiser les obstacles en fonction de la difficulté."""
-        # Copie indépendante des positions
+        """Initialise les obstacles en fonction de la difficulté."""
+        # Positions manuelles des obstacles selon leur type
         manual_positions = {
             'obstacle_type1': [  # Bonhommes de neige
-                (0,5),(2,6),(13,6),(15,6),(3,7),(6,9),(8,9),
-                (0 ,12),(1,12),(3,14),(5,15),(7,15) ,(9,15),(13,15),
+                (0, 5), (2, 6), (13, 6), (15, 6), (3, 7), (6, 9), (8, 9),
+                (0, 12), (1, 12), (3, 14), (5, 15), (7, 15), (9, 15), (13, 15),
             ],
             'obstacle_type2': [  # Murs
-                (14,0),(15,0),(0,6),(1,6),(0,7),(1,7),(2,7),(12,7),(13,7),(14 ,17),
-                (15,7),(2,8),(3,8),(13,8),(14,8),(15,8),(7,8),(7,9),(13,9),(14,9),(15,9),
-                (6,10),(7,10),(8,10),(13,10),(15,10) ,(0,13),(1,13),(0 ,14),(1,14),(2,14),
-                (0,15), (1,15), (2,15), (3,15), (4,15), 
-
+                (14, 0), (15, 0), (0, 6), (1, 6), (0, 7), (1, 7), (2, 7), (12, 7), (13, 7), (14, 17),
+                (15, 7), (2, 8), (3, 8), (13, 8), (14, 8), (15, 8), (7, 8), (7, 9), (13, 9), (14, 9), (15, 9),
+                (6, 10), (7, 10), (8, 10), (13, 10), (15, 10), (0, 13), (1, 13), (0, 14), (1, 14), (2, 14),
+                (0, 15), (1, 15), (2, 15), (3, 15), (4, 15),
             ],
             'obstacle_type3': [  # Neige (zones plus difficiles à traverser)
-                (0, 1),(4,0),(7,0),(9,0),(13,0),(3,1) ,(6,1),(11,1),(12,1) ,
-                (8,2),(10,2), (2,3),(6,3),(3,4),(13,4),(15,4),(7,5),(10,5),
-                (5,6),(9,6),(0,9),(4,9),(11 ,9),(10,11),(5,12),(11,13),
+                (0, 1), (4, 0), (7, 0), (9, 0), (13, 0), (3, 1), (6, 1), (11, 1), (12, 1),
+                (8, 2), (10, 2), (2, 3), (6, 3), (3, 4), (13, 4), (15, 4), (7, 5), (10, 5),
+                (5, 6), (9, 6), (0, 9), (4, 9), (11, 9), (10, 11), (5, 12), (11, 13),
             ]
         }
 
-        # Ajuster en fonction de la difficulté
+        # Ajustement des obstacles selon la difficulté
         if self.difficulty == "facile":
-            # Suppression uniquement pour le mode facile
+            # Retrait de certains obstacles pour rendre le jeu plus facile
             manual_positions['obstacle_type1'] = [
                 pos for pos in manual_positions['obstacle_type1'] if pos not in [
-                    (0 ,12),(1,12),(3,14),(13,15),(15,6)
+                    (0, 12), (1, 12), (3, 14), (13, 15), (15, 6)
                 ]
             ]
             manual_positions['obstacle_type2'] = [
                 pos for pos in manual_positions['obstacle_type2'] if pos not in [
-                   (15,7),(2,8),(3,8),(13,8),(14,8),(15,8),(7,8),(7,9),(13,9),(14,9),(15,9),
-                (6,10),(7,10),(8,10),(13,10),(15,10) ,(0,13),(1,13),(0 ,14),(1,14),(2,14),
-                (0,15), (1,15), (2,15), (3,15), (4,15), 
+                   (15, 7), (2, 8), (3, 8), (13, 8), (14, 8), (15, 8), (7, 8), (7, 9), (13, 9), (14, 9), (15, 9),
+                (6, 10), (7, 10), (8, 10), (13, 10), (15, 10), (0, 13), (1, 13), (0, 14), (1, 14), (2, 14),
+                (0, 15), (1, 15), (2, 15), (3, 15), (4, 15),
                 ]
             ]
             manual_positions['obstacle_type3'] = [
                 pos for pos in manual_positions['obstacle_type3'] if pos not in [
-                    (8,2),(10,2), (2,3),(6,3),(3,4),(13,4),(15,4),(7,5),(10,5),
-                    (5,6),(9,6),(0,9),(4,9),(11 ,9),(10,11),(5,12),(11,13),
+                    (8, 2), (10, 2), (2, 3), (6, 3), (3, 4), (13, 4), (15, 4), (7, 5), (10, 5),
+                    (5, 6), (9, 6), (0, 9), (4, 9), (11, 9), (10, 11), (5, 12), (11, 13),
                 ]
             ]
-       
 
         elif self.difficulty == "difficile":
-            # Ajout uniquement pour le mode difficile
+            # Ajout de nouveaux obstacles pour rendre le jeu plus difficile
             manual_positions['obstacle_type1'].extend([
-                (15, 11), (13, 11), 
+                (15, 11), (13, 11),
             ])
 
         # Ajouter les obstacles au jeu
         excluded_positions = {(unit.x, unit.y) for unit in self.player_units + self.enemy_units}
         for obstacle_type, positions in manual_positions.items():
-            image_path = self.obstacle_images[obstacle_type]
-            obstacles = Obstacle.generate_obstacles_from_positions(0, excluded_positions, image_path, positions)
-            self.obstacles.extend(obstacles)
-    
+            image_path = self.obstacle_images[obstacle_type]  # Récupère le chemin de l'image de l'obstacle.
+            obstacles = Obstacle.generate_obstacles_from_positions(0, excluded_positions, image_path, positions)  # Crée les obstacles dans le jeu.
+            self.obstacles.extend(obstacles)  # Ajoute les obstacles générés à la liste.
+
     
     def draw_main_menu(self):
         """Dessiner le menu principal avec les boutons."""
@@ -288,11 +283,11 @@ class Game:
                                                         # Vérifier si le joueur est sur un cadeau
                             for gift in self.gifts:
                                 if gift.x == unit.x and gift.y == unit.y:
-                                     # Augmenter la santé du joueur de 10, mais ne pas dépasser 100
-                                    unit.health = min(unit.health + 10, 100)  # Limiter à 100
-                                    self.gifts.remove(gift)
+                                    # Activer le pouvoir pour traverser les nuages
+                                    unit.has_power = True
+                                    print("Pouvoir activé : l'unité peut désormais traverser les nuages !")
+                                    self.gifts.remove(gift)  # Supprimer le cadeau après activation
                                     break
-
                             if not available_targets: # Si aucune cible n’est trouvée, le tour est marqué comme terminé pour cette unité.
                                 print("Aucune cible disponible. Tour terminé pour cette unité.")
                                 has_acted = True 
@@ -1019,6 +1014,9 @@ class Game:
         self.initialize_obstacles()
 
 pygame.init()  # Initialisation de Pygame 
+# Contrôle de la vitesse
+clock = pygame.time.Clock()  # Initialisation de la clock
+FPS = 30  # Limitation à 30 images par seconde
 
 # Charger les images pour les unités du joueur et de l'ennemi
 # Les images sont redimensionnées à la taille des cellules de la grille (CELL_SIZE x CELL_SIZE)
