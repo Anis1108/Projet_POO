@@ -308,7 +308,7 @@ class Game:
                                         print("Sélectionnez une case vide pour vous téléporter.")
                                         target_position = self.handle_target_position_selection(unit)
                                         if target_position:
-                                            success = skill.use(unit, target_position, self.obstacles, self.player.units + self.enemy.units)
+                                            success = skill.use(unit, target_position)
                                             if success:
                                                 has_acted = True
 
