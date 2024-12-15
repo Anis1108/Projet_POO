@@ -21,6 +21,9 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 CYAN = (0, 255, 255)
+BUTTON_COLOR = (0, 128, 255)
+HOVER_COLOR = (0, 255, 255)
+TEXT_COLOR = (255, 255, 255)
 
 
 
@@ -29,10 +32,11 @@ CYAN = (0, 255, 255)
 class Game:
     
 
-    def __init__(self, screen):
+    def __init__(self, screen, difficulty="facile"):
         
 
         self.screen = screen #Fenêtre principale où le jeu est dessiné.
+        self.difficulty = difficulty  # Définir la difficulté
         self.background = pygame.image.load(r"asset/backr.png")
         self.background = pygame.transform.scale(self.background, (GRID_SIZE * CELL_SIZE, HEIGHT))
 
@@ -59,9 +63,25 @@ class Game:
         
         self.player_turn = True # Définit si c'est le tour du joueur.
         self.winner = None #Garde le nom du vainqueur lorsqu'une partie se termine.
+        #interface 
+        self.game_started = False  # Indicateur si le jeu a commencé
+        self.obstacle_images = {
+            'obstacle_type1': r"asset/bonome.png",
+            'obstacle_type2': r"asset/mur.png",
+            'obstacle_type3': r"asset/nuage.png"
+        }
 
-        # Positions des obstacles dans un dictionnaire
+        gift_positions = [
+            (8, 0), (14, 7), (0, 8), (3, 9), (14, 10), (4, 14), (11, 15),
+        ]
+        gift_image_path = r"C:\Users\AS\Desktop\LydiaKEBLIPhython\asset\gift.png"
+        self.gifts = Gift.generate_gifts_from_positions(gift_image_path, positions=gift_positions)
 
+        self.obstacles = []
+        self.initialize_obstacles()
+    def initialize_obstacles(self):
+        """Initialiser les obstacles en fonction de la difficulté."""
+        # Copie indépendante des positions
         manual_positions = {
             'obstacle_type1': [  # Bonhommes de neige
                 (0,5),(2,6),(13,6),(15,6),(3,7),(6,9),(8,9),
@@ -81,38 +101,133 @@ class Game:
             ]
         }
 
+        # Ajuster en fonction de la difficulté
+        if self.difficulty == "facile":
+            # Suppression uniquement pour le mode facile
+            manual_positions['obstacle_type1'] = [
+                pos for pos in manual_positions['obstacle_type1'] if pos not in [
+                    (0 ,12),(1,12),(3,14),(13,15),(15,6)
+                ]
+            ]
+            manual_positions['obstacle_type2'] = [
+                pos for pos in manual_positions['obstacle_type2'] if pos not in [
+                   (15,7),(2,8),(3,8),(13,8),(14,8),(15,8),(7,8),(7,9),(13,9),(14,9),(15,9),
+                (6,10),(7,10),(8,10),(13,10),(15,10) ,(0,13),(1,13),(0 ,14),(1,14),(2,14),
+                (0,15), (1,15), (2,15), (3,15), (4,15), 
+                ]
+            ]
+            manual_positions['obstacle_type3'] = [
+                pos for pos in manual_positions['obstacle_type3'] if pos not in [
+                    (8,2),(10,2), (2,3),(6,3),(3,4),(13,4),(15,4),(7,5),(10,5),
+                    (5,6),(9,6),(0,9),(4,9),(11 ,9),(10,11),(5,12),(11,13),
+                ]
+            ]
+       
 
+        elif self.difficulty == "difficile":
+            # Ajout uniquement pour le mode difficile
+            manual_positions['obstacle_type1'].extend([
+                (15, 11), (13, 11), 
+            ])
 
-
+        # Ajouter les obstacles au jeu
         excluded_positions = {(unit.x, unit.y) for unit in self.player_units + self.enemy_units}
-        
-        # Générer dynamiquement les obstacles
-        self.obstacles = []
-        self.obstacle_images = {
-            'obstacle_type1': r"asset/bonome.png",
-            'obstacle_type2': r"asset/mur.png",
-            'obstacle_type3': r"asset/nuage.png"
-        }
-
         for obstacle_type, positions in manual_positions.items():
             image_path = self.obstacle_images[obstacle_type]
-            obstacles = Obstacle.generate_obstacles_from_positions(10, excluded_positions, image_path, positions)
+            obstacles = Obstacle.generate_obstacles_from_positions(0, excluded_positions, image_path, positions)
             self.obstacles.extend(obstacles)
-        
-        # Positions des cadeaux
-        gift_positions = [
-            (8,0),(14,7),(0,8),(3,9),(14,10),(4,14),(11,15), # Ajoutez autant de cadeaux que vous voulez
-        ]
+    
+    
+    def draw_main_menu(self):
+        """Dessiner le menu principal avec les boutons."""
+        # Charger et afficher l'image de fond
+        background_image = pygame.image.load(r"C:\Users\AS\Desktop\Projet_POO\asset\interface.png")  # Mettez ici le chemin vers votre image
+        background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))  # Ajuster la taille de l'image à la fenêtre
+        self.screen.blit(background_image, (0, 0))  # Afficher l'image de fond sur l'écran
 
-        gift_image_path = r"asset/gift.png"  # Image du cadeau
 
-        self.gifts = Gift.generate_gifts_from_positions(
-            gift_image_path,
-            positions=gift_positions
-        )
-        #interface 
-        self.font = pygame.font.Font(None, 36)
-        self.running = True
+        # Bouton 'Démarrer'
+        start_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 - 25, 200, 50)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, start_button_rect)
+        start_text = pygame.font.Font(None, 36).render("Démarrer", True, TEXT_COLOR)
+        self.screen.blit(start_text, (WIDTH // 2 - start_text.get_width() // 2, HEIGHT // 2 - 20))
+
+        # Bouton 'Quitter'
+        quit_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, quit_button_rect)
+        quit_text = pygame.font.Font(None, 36).render("Quitter", True, TEXT_COLOR)
+        self.screen.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, HEIGHT // 2 + 60))
+
+        pygame.display.flip()
+
+    def handle_main_menu_events(self):
+        """Gérer les événements du menu principal."""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+
+                # Vérifier si on clique sur le bouton 'Démarrer'
+                start_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 - 25, 200, 50)
+                if start_button_rect.collidepoint(x, y):
+                    self.game_started = True
+                    return True
+
+                # Vérifier si on clique sur le bouton 'Quitter'
+                quit_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+                if quit_button_rect.collidepoint(x, y):
+                    pygame.quit()
+                    exit()
+
+        return False
+ 
+    def draw_difficulty_menu(self):
+        """Dessiner le menu de sélection de difficulté."""
+        font = pygame.font.Font(None, 72)
+        title_text = font.render("Sélectionner la difficulté", True, TEXT_COLOR)
+        self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 4))
+
+        # Bouton "Facile"
+        easy_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 - 25, 200, 50)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, easy_button_rect)
+        easy_text = pygame.font.Font(None, 36).render("Facile", True, TEXT_COLOR)
+        self.screen.blit(easy_text, (WIDTH // 2 - easy_text.get_width() // 2, HEIGHT // 2 - 20))
+
+        # Bouton "Difficile"
+        hard_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+        pygame.draw.rect(self.screen, BUTTON_COLOR, hard_button_rect)
+        hard_text = pygame.font.Font(None, 36).render("Difficile", True, TEXT_COLOR)
+        self.screen.blit(hard_text, (WIDTH // 2 - hard_text.get_width() // 2, HEIGHT // 2 + 60))
+
+        pygame.display.flip()
+
+    def handle_difficulty_menu_events(self):
+        """Gérer les événements du menu de sélection de difficulté."""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+
+                # Vérifier si on clique sur le bouton "Facile"
+                easy_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 - 25, 200, 50)
+                if easy_button_rect.collidepoint(x, y):
+                    self.difficulty = "facile"
+                    return True
+
+                # Vérifier si on clique sur le bouton "Difficile"
+                hard_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+                if hard_button_rect.collidepoint(x, y):
+                    self.difficulty = "difficile"
+                    return True
+
+        return False
+
 
 
     # Gestion des tours
@@ -173,8 +288,8 @@ class Game:
                                                         # Vérifier si le joueur est sur un cadeau
                             for gift in self.gifts:
                                 if gift.x == unit.x and gift.y == unit.y:
-                                    # Réduire la santé de l'unité et retirer le cadeau
-                                    unit.health += 1
+                                     # Augmenter la santé du joueur de 10, mais ne pas dépasser 100
+                                    unit.health = min(unit.health + 10, 100)  # Limiter à 100
                                     self.gifts.remove(gift)
                                     break
 
@@ -866,84 +981,42 @@ class Game:
 
 
 
-    def draw_main_menu(self):
-        font = pygame.font.Font(None, 36)
-        title_text = font.render("Jeu de stratégie", True, (255, 255, 255))
-        start_text = font.render("Démarrer", True, (255, 255, 255))
-        quit_text = font.render("Quitter", True, (255, 255, 255))
+    def handle_main_menu_events(self):
+        """Gérer les événements du menu principal."""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
 
-        # Charger l'image de fond
-        background = pygame.image.load(r"asset/interface.png")  # Assurez-vous que l'image est dans le bon répertoire
-        background = pygame.transform.scale(background, (WIDTH, HEIGHT))  # Redimensionner pour correspondre à la fenêtre
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
 
-        # Afficher l'image de fond
-        self.screen.blit(background, (0, 0))
+                # Vérifier si on clique sur le bouton 'Démarrer'
+                start_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 - 25, 200, 50)
+                if start_button_rect.collidepoint(x, y):
+                    self.game_started = True
+                    return True
 
-        # Afficher les textes par-dessus l'image
-        self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 100))
-        self.screen.blit(start_text, (WIDTH // 2 - start_text.get_width() // 2, 200))
-        self.screen.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, 300))
-
-        pygame.display.flip()
-
-    def run_main_menu(self):
-        """Affiche le menu principal et gère les choix de l'utilisateur."""
-        running = True
-        while running:
-            self.draw_main_menu()
-
-            # Gérer les événements du menu
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                # Vérifier si on clique sur le bouton 'Quitter'
+                quit_button_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+                if quit_button_rect.collidepoint(x, y):
                     pygame.quit()
                     exit()
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:  # Appuyer sur Entrée pour commencer
-                        self.start_game()
-                        return
-                    elif event.key == pygame.K_ESCAPE:  # Appuyer sur Échap pour quitter
-                        pygame.quit()
-                        exit()
+        return False
+    def main_menu(self):
+        """Affiche le menu principal."""
+        while not self.game_started:
+            self.handle_main_menu_events()
+            self.draw_main_menu()
+        # Une fois le jeu démarré, sélectionner la difficulté
+        self.difficulty = None
+        while self.difficulty is None:
+            self.handle_difficulty_menu_events()
+            self.draw_difficulty_menu()
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    # Si un clic gauche est détecté, vérifier la position
-                    x, y = pygame.mouse.get_pos()
-                    if self.is_start_button_hover(x, y):
-                        self.start_game()
-                        return
-                    elif self.is_quit_button_hover(x, y):
-                        pygame.quit()
-                        exit()
-
-    def is_start_button_hover(self, x, y):
-        """Vérifie si le curseur est sur le bouton 'Démarrer'."""
-        start_rect = pygame.Rect(WIDTH // 2 - 100, 200, 200, 50)
-        return start_rect.collidepoint(x, y)
-
-    def is_quit_button_hover(self, x, y):
-        """Vérifie si le curseur est sur le bouton 'Quitter'."""
-        quit_rect = pygame.Rect(WIDTH // 2 - 100, 300, 200, 50)
-        return quit_rect.collidepoint(x, y)
-
-    def start_game(self):
-        """Démarre le jeu après avoir appuyé sur 'Démarrer'."""
-        print("Le jeu commence...")
-        # Vous pouvez maintenant intégrer ici la logique pour démarrer le jeu.
-
-def draw_main_menu(self):
-    font = pygame.font.Font(None, 36)
-    title_text = font.render("Jeu de stratégie", True, (255, 255, 255))
-    start_text = font.render("Démarrer", True, (255, 255, 255))
-    quit_text = font.render("Quitter", True, (255, 255, 255))
-
-    self.screen.fill((0, 0, 0))
-    self.screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 100))
-    self.screen.blit(start_text, (WIDTH // 2 - start_text.get_width() // 2, 200))
-    self.screen.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, 300))
-
-    pygame.display.flip()
-
+        # Réinitialiser les obstacles selon la difficulté choisie
+        self.initialize_obstacles()
 
 pygame.init()  # Initialisation de Pygame 
 
@@ -964,8 +1037,6 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 # Créer une instance de la classe Game, pas game
 game_instance = Game(screen) 
 
-# Afficher le menu principal avant de commencer
-game_instance.run_main_menu()
 
 # Définir le titre de la fenêtre
 pygame.display.set_caption("Jeu de tour par tour 2D")
@@ -973,9 +1044,9 @@ pygame.display.set_caption("Jeu de tour par tour 2D")
 # Initialiser l'instance du jeu
 # L'objet Game gère la logique et les mécaniques du jeu
 game = Game(screen)
+game.main_menu()  # Affiche le menu principal
 
-# Créer un objet horloge pour contrôler la cadence du jeu
-clock = pygame.time.Clock()
+
 
 # Boucle principale du jeu
 while True:
